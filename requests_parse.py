@@ -47,13 +47,14 @@ def get_card_links(lst: list) -> None:
     for chapter_link in lst:
         doc = get_data(f'{base_url}{chapter_link}')
         categories_link = [link.get('href') for link in doc.find_all('a', 'products-slider__header')]
+        print('\\..')
         for category_link in categories_link:
             doc = get_data(f'{base_url}{category_link}')
             products_link = [link.get('href') for link in doc.find_all('a', 'product-card__link')]
             with open('card_links.txt', 'a', encoding='utf-8') as file:
                 for product_link in products_link:
                     file.write(f'{base_url}{product_link}\n')
-                print(f'Добавлена {base_url}{product_link}')
+            print('/...')
     print('Все ссылки собраны')
 
 
@@ -67,30 +68,32 @@ def search_data(card_links: str) -> None:
     data = {}
 
     for link in card_links:
-        file_name_end = card_links.split('/')[-1]
+        file_name_end = link.strip().split('/')[-1]
         repeat = False
 
         for _ in range(2):
             if repeat:
                 print('\nПовторная попытка поиска\n')
 
-            doc = get_data(f'{link}')
+            doc = get_data(f'{link.strip()}')
             categories = [cat.text for cat in doc.find_all('span', 'breadcrumb') if
                           cat.text not in ['Главная', 'Каталог']]
 
             try:
                 name = doc.find('h1', 'product__title').text
-                image_url = doc.find(class_='product__gallery').find('img').get('src')
-                image = requests.get(image_url).content
+                image_url = requests.get(doc.find(class_='product__gallery').find('img').get('src'))
+                time.sleep(3)
+                image = image_url.content
                 nature_val = [val.text for val in doc.find_all('div', 'product-calories-item__value')]
                 nature_key = [key.text for key in doc.find_all('div', 'product-calories-item__title')]
                 nature_dict = dict(zip(nature_key, nature_val))
             except Exception as ex:
                 print(f'---!!!--- ОШИБКА ПОИСКА ---!!!---'
+                      f'\n{doc}'
                       f'\n\tmessage: {ex}'
-                      f'\n\tlink: {link}'
+                      f'\n\tlink: {link.strip()}'
                       f'\n\tname: {doc.find("h1", "product__title")}'
-                      f'\n\timage: {doc.find(class_="product__gallery").find("img").get("src")}'
+                      f'\n\timage: {doc.find(class_="product__gallery")}'
                       f'\n\tvalue: {doc.find_all("div", "product-calories-item__value")}'
                       f'\n\tkey: {doc.find_all("div", "product-calories-item__title")}\n')
                 repeat = True
@@ -100,13 +103,13 @@ def search_data(card_links: str) -> None:
                 else:
                     data.setdefault(categories[-1], {
                         name: nature_dict,
-                        'image_name': f'img_{file_name_end}.jpg'
+                        'image_name': f'{file_name_end}.jpg'
                     })
                 print(f'+ Товар {name} | {nature_dict}')
 
-                with open(f'images/img_{file_name_end}.jpg', 'wb') as img:
+                with open(f'images/{file_name_end}.jpg', 'wb+') as img:
                     img.write(image)
-                print(f'+ Изображение img_{file_name_end}.jpg')
+                print(f'+ Изображение {file_name_end}.jpg')
                 break
 
     with open(f'files/data.json', 'w', encoding='utf-8') as file:
@@ -114,7 +117,7 @@ def search_data(card_links: str) -> None:
 
 
 def main():
-    get_card_links(links_categories)
+    # get_card_links(links_categories)
     with open('card_links.txt', 'r', encoding='utf-8') as file:
         search_data(file.readlines())
 
