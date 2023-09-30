@@ -43,6 +43,7 @@ def get_data(url: str) -> BeautifulSoup:
 
 
 def get_card_links(lst: list) -> None:
+    print('Начинаем собирать ссылки')
     for chapter_link in lst:
         doc = get_data(f'{base_url}{chapter_link}')
         categories_link = [link.get('href') for link in doc.find_all('a', 'products-slider__header')]
@@ -51,7 +52,9 @@ def get_card_links(lst: list) -> None:
             products_link = [link.get('href') for link in doc.find_all('a', 'product-card__link')]
             with open('card_links.txt', 'a', encoding='utf-8') as file:
                 for product_link in products_link:
-                    file.write(f'{product_link}\n')
+                    file.write(f'{base_url}{product_link}\n')
+                print(f'Добавлена {base_url}{product_link}')
+    print('Все ссылки собраны')
 
 
 @timer
@@ -63,7 +66,7 @@ def search_data(card_links: str) -> None:
     """
     data = {}
 
-    for card in card_links:
+    for link in card_links:
         file_name_end = card_links.split('/')[-1]
         repeat = False
 
@@ -71,7 +74,7 @@ def search_data(card_links: str) -> None:
             if repeat:
                 print('\nПовторная попытка поиска\n')
 
-            doc = get_data(f'{base_url}{card}')
+            doc = get_data(f'{link}')
             categories = [cat.text for cat in doc.find_all('span', 'breadcrumb') if
                           cat.text not in ['Главная', 'Каталог']]
 
@@ -85,7 +88,7 @@ def search_data(card_links: str) -> None:
             except Exception as ex:
                 print(f'---!!!--- ОШИБКА ПОИСКА ---!!!---'
                       f'\n\tmessage: {ex}'
-                      f'\n\tlink: {base_url}{card}'
+                      f'\n\tlink: {link}'
                       f'\n\tname: {doc.find("h1", "product__title")}'
                       f'\n\timage: {doc.find(class_="product__gallery").find("img").get("src")}'
                       f'\n\tvalue: {doc.find_all("div", "product-calories-item__value")}'
