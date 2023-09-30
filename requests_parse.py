@@ -81,8 +81,7 @@ def search_data(card_links: str) -> None:
 
             try:
                 name = doc.find('h1', 'product__title').text
-                image_url = requests.get(doc.find(class_='product__gallery').find('img').get('src'))
-                time.sleep(3)
+                image_url = requests.get(doc.find(class_='product__gallery').find('img', itemprop="image").get('src'))
                 image = image_url.content
                 nature_val = [val.text for val in doc.find_all('div', 'product-calories-item__value')]
                 nature_key = [key.text for key in doc.find_all('div', 'product-calories-item__title')]
